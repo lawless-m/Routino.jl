@@ -1,6 +1,6 @@
 # Routino
 
-spawn an instance of routino to get a route between two Lat/Long pairs
+spawn an instance of routino to get a route or a distance between two Lat/Long pairs
 
 this requires a routino installation https://www.routino.org/
 
