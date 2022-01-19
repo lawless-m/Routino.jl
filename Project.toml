@@ -1,0 +1,13 @@
+name = "Routino"
+uuid = "af9365b3-6396-43a5-91de-4b2b6117311b"
+authors = ["Matt Lawless"]
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1"
+
+[targets]
+test = ["Test"]
