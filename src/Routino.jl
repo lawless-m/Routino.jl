@@ -19,13 +19,15 @@ function route(wayp1::LoLa, wayp2::LoLa; binary=BINARY, datadir=DATADIR, prefix=
     split(String(run(wayp1, wayp2;  binary, datadir, prefix)), "\n")
 end
 
-function distance(wayp1::LoLa, wayp2::LoLa; binary=BINARY, datadir=DATADIR, prefix="GB")
+function distance(wayp1::LoLa, wayp2::LoLa; binary=BINARY, datadir=DATADIR, prefix="GB", default=nothing)
     tline = filter(t->occursin("Waypt#2", t), route(wayp1, wayp2;  binary, datadir, prefix))
     if length(tline) == 1
         parts = split(tline[1], "\t")
         km = 1.2parse(Float64, split(strip(parts[5]), " ")[1])
         mins = 1.2parse(Float64, split(strip(parts[6]), " ")[1])
         (;km, mins)
+    else
+        default
     end
 end
 #==
