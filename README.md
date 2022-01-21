@@ -8,3 +8,7 @@ this requires a routino installation https://www.routino.org/
 
 and pbf files processed into nodes.mem files using planetsplit
 
+Docs
+
+https://lawless-m.github.io/Routino.jl/dev/
+
