@@ -2,7 +2,7 @@ module Routino
 
 using CCallHelp
 
-export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router
+export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router, free_xml
 
 const BINARY = "/usr/bin/routino-router"
 const DATADIR = "/trip/osm"
@@ -46,14 +46,17 @@ struct Router
         pf = get_profile(profile)
         validate_profile(db, pf)
         tr = get_translation(language)
-        @ccall LIB.Routino_FreeXMLProfiles()::Cvoid
-        @ccall LIB.Routino_FreeXMLTranslations()::Cvoid
         new(db, pf, tr, Ptr{Cvoid}[])
     end
 end 
 
 function close_router(r)
     @ccall LIB.Routino_UnloadDatabase(r.db::DB)::Cvoid
+end
+
+function free_xml()
+     @ccall LIB.Routino_FreeXMLProfiles()::Cvoid
+     @ccall LIB.Routino_FreeXMLTranslations()::Cvoid
 end
 
 """
