@@ -65,10 +65,10 @@ end
 
 """
     distance(wayp1::LoLa, wayp2::LoLa, router=Router(), default=nothing)
-    distance(wayp1::LoLa, wayp2::LoLa, binary, datadir=DATADIR, prefix="GB", default=nothing)
+    distance(wayp1::LoLa, wayp2::LoLa, binary, datadir=DATADIR, prefix="GB", default=nothing; options=1024) # 1025 for shortest
 Calculate the route and return the `(km=0, mins=0)` or `default` using either the `Router` or the binary via the shell
 """
-function distance(wayp1::LoLa, wayp2::LoLa, router::Router=Router(), default=nothing; options=Cint[1,9,512])
+function distance(wayp1::LoLa, wayp2::LoLa, router::Router=Router(), default=nothing; options=1024) # quickest
     clear_waypoints(router)
     if add_waypoint!(wayp1, router) && add_waypoint!(wayp2, router)
         km_mins = walk_to_distance(calculate_route(router, options))
