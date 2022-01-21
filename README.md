@@ -12,3 +12,6 @@ Docs
 
 https://lawless-m.github.io/Routino.jl/dev/
 
+TODO
+named options
+Vector of turns (just does distance & time atm)
