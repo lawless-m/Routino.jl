@@ -8,6 +8,7 @@ CCallHelp = "9075dd63-1c0b-4e8f-b2f0-f66def68342a"
 
 [compat]
 julia = "1"
+CCallHelp = "0.1.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
