@@ -68,7 +68,7 @@ end
     distance(wayp1::LoLa, wayp2::LoLa, binary, datadir=DATADIR, prefix="GB", default=nothing)
 Calculate the route and return the `(km=0, mins=0)` or `default` using either the `Router` or the binary via the shell
 """
-function distance(wayp1::LoLa, wayp2::LoLa, router=Router(), default=nothing; options=Cint[1,9,512])
+function distance(wayp1::LoLa, wayp2::LoLa, router::Router=Router(), default=nothing; options=Cint[1,9,512])
     clear_waypoints(router)
     if add_waypoint!(wayp1, router) && add_waypoint!(wayp2, router)
         km_mins = walk_to_distance(calculate_route(router, options))
@@ -77,7 +77,7 @@ function distance(wayp1::LoLa, wayp2::LoLa, router=Router(), default=nothing; op
     default
 end
 
-function distance(wayp1::LoLa, wayp2::LoLa, binary, datadir=DATADIR, prefix="GB", default=nothing)
+function distance(wayp1::LoLa, wayp2::LoLa, binary::AbstractString, datadir=DATADIR, prefix="GB", default=nothing)
     tline = filter(t->occursin("Waypt#2", t), route(wayp1, wayp2, binary; datadir, prefix))
     if length(tline) == 1
         parts = split(tline[1], "\t")
@@ -144,12 +144,16 @@ Test if a waypoint is in the database.
 - `wp` waypoint in (lo=0, la=0) format
 - `la`, `lo`  Longitude, Latitude
 """
-find_waypoint(wp, router=Router()) = find_waypoint(wp.lo, wp.la, router)
-find_waypoint(lo, la, router=Router()) = find_waypoint(lo, la, router.db, router.profile)
+find_waypoint(wp::LoLa, router::Router=Router()) = find_waypoint(wp.lo, wp.la, router)
+find_waypoint(lo::Float64, la::Float64, router::Router=Router()) = find_waypoint(lo, la, router.db, router.profile)
 
-_calculate_route(waypoints::Vector{Waypoint}, options=Cint[1,512]; router=Router()) = _calculate_route(waypoints, router.db, router.profile, router.translation, options)
-function _calculate_route(waypoints::Vector{Ptr{Cvoid}}, db, profile, translation, options=Cint[1,512])
-    @ccall LIB.Routino_CalculateRoute(db::DB, profile::Profile, translation::Translation, waypoints::Waypoint, length(waypoints)::Cint, reduce((a,i) -> a |= i, options, init=Cint(0))::Cint, C_NULL::Ptr{Cvoid})::Ptr{COutput}
+#calculate_route(waypoints::Vector{Waypoint}, options; router=Router()) = calculate_route(waypoints, router.db, router.profile, router.translation, options)
+calculate_route(waypoints::Vector{Ptr{Cvoid}}, db, profile, translation, options) = @ccall LIB.Routino_CalculateRoute(db::DB, profile::Profile, translation::Translation, waypoints::Waypoint, length(waypoints)::Cint, options::Cint, C_NULL::Ptr{Cvoid})::Ptr{COutput}
+
+function calculate_route(router, options)
+    if length(router.waypoints) > 1
+        return calculate_route(router.waypoints, router.db, router.profile, router.translation, options)
+    end
 end
 
 """
@@ -157,14 +161,8 @@ end
     shortest_route(router)::Ptr{COutput}
 Run the calculation if there are sufficient waypoints returning either the quickest or shortest route.
 """
-quickest_route(router) = calculate_route(router, options=Cint[1,512])
-shortest_route(router) = calculate_route(router, options=Cint[0,512])
-
-function calculate_route(router, options=Cint[1,512])
-    if length(router.waypoints) > 1
-        return _calculate_route(router.waypoints, router.db, router.profile, router.translation, options)
-    end
-end
+quickest_route(router) = calculate_route(router, 513)
+shortest_route(router) = calculate_route(router, 512)
 
 """
     add_waypoint!(wp::LoLa, router::Router)::Bool
