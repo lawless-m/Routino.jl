@@ -11,10 +11,10 @@ using Test
         router = Router("foot")
         add_waypoint!(-1.7587022270945216, 53.67050050773988, router)
         add_waypoint!(-1.6091688317085435, 53.74083763716689, router)
-        out = shortest_route(router)
+        out = quickest_route(router)
         @test out != C_NULL
         @test typeof(out) == Ptr{Routino.COutput}
-        @test distance(out) == (km = 15, mins = 229)
+        @test Routino.walk_to_distance(out) == (km = 15, mins = 229)
     end
 
 end

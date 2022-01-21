@@ -161,8 +161,8 @@ end
     shortest_route(router)::Ptr{COutput}
 Run the calculation if there are sufficient waypoints returning either the quickest or shortest route.
 """
-quickest_route(router) = calculate_route(router, 513)
-shortest_route(router) = calculate_route(router, 512)
+quickest_route(router) = calculate_route(router, 1024)
+shortest_route(router) = calculate_route(router, 1025)
 
 """
     add_waypoint!(wp::LoLa, router::Router)::Bool
