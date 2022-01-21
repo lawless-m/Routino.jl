@@ -2,7 +2,7 @@ module Routino
 
 using CCallHelp
 
-export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names
+export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router
 
 const BINARY = "/usr/bin/routino-router"
 const DATADIR = "/trip/osm"
@@ -10,6 +10,16 @@ const LIB = "/usr/lib/libroutino.so.0"
 const ROUTINO_API_VER = Cint(8)
 const PROFILES = "/usr/share/routino/profiles.xml"
 const TRANSLATIONS = "/usr/share/routino/translations.xml"
+
+
+const DB = Ptr{Cvoid}
+const Profile = Ptr{Cvoid}
+const Waypoint = Ptr{Cvoid}
+const Translation = Ptr{Cvoid}
+const ProgressFunc= Ptr{Cvoid}
+
+const PUchars = Ptr{Cuchar}
+const ListString = Ptr{PUchars}
 
 const LoLa = typeof((lo=0.0, la=0.0))
 """
@@ -35,9 +45,16 @@ struct Router
         db = open_database(path, prefix)
         pf = get_profile(profile)
         validate_profile(db, pf)
-        new(db, pf, get_translation(language), Ptr{Cvoid}[])
+        tr = get_translation(language)
+        @ccall LIB.Routino_FreeXMLProfiles()::Cvoid
+        @ccall LIB.Routino_FreeXMLTranslations()::Cvoid
+        new(db, pf, tr, Ptr{Cvoid}[])
     end
 end 
+
+function close_router(r)
+    @ccall LIB.Routino_UnloadDatabase(r.db::DB)::Cvoid
+end
 
 """
     clear_waypoints(r::Router)
@@ -98,14 +115,6 @@ wayp2 = (lo=-2.954101, la=53.479544)
 ==#
 
 
-const DB = Ptr{Cvoid}
-const Profile = Ptr{Cvoid}
-const Waypoint = Ptr{Cvoid}
-const Translation = Ptr{Cvoid}
-const ProgressFunc= Ptr{Cvoid}
-
-const PUchars = Ptr{Cuchar}
-const ListString = Ptr{PUchars}
 
 struct COutput
     next::Ptr{COutput}
