@@ -1,6 +1,8 @@
 # Routino
 
-spawn an instance of routino to get a route or a distance between two Lat/Long pairs
+Call into the routino .so and get routing information via OpenStreetmaps
+
+Or spawn an instance of routino-router via shell and get a route or a distance between two Lat/Long pairs
 
 this requires a routino installation https://www.routino.org/
 
