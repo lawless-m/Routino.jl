@@ -2,7 +2,7 @@ module Routino
 
 using CCallHelp
 
-export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router, free_xml
+export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router, free_xml, walk_to_distance
 
 const BINARY = "/usr/bin/routino-router"
 const DATADIR = "/trip/osm"
