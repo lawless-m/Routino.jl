@@ -13,10 +13,10 @@ const TRANSLATIONS = "/usr/share/routino/translations.xml"
 
 
 const DB = Ptr{Cvoid}
-const Profile = Ptr{Cvoid}
-const Waypoint = Ptr{Cvoid}
-const Translation = Ptr{Cvoid}
-const ProgressFunc= Ptr{Cvoid}
+const PtrProfile = Ptr{Cvoid}
+const PtrWaypoint = Ptr{Cvoid}
+const PtrTranslation = Ptr{Cvoid}
+const PtrProgressFunc= Ptr{Cvoid}
 
 const PUchars = Ptr{Cuchar}
 const ListString = Ptr{PUchars}
@@ -135,6 +135,133 @@ struct COutput
     desc3::PUchars
 end
 
+const index_t = Cuint
+const distance_t = Cuint
+const transports_t = Cushort  
+const highways_t = Cushort 
+const properties_t = Cuchar
+const speed_t = Cuchar
+const weight_t = Cuchar 
+const height_t = Cuchar  
+const width_t = Cuchar  
+const length_t = Cuchar 
+const score_t = Cfloat
+const ll_bin_t = Cshort
+const ll_off_t = Cshort
+const nodeflags_t = Cushort
+
+@enum Transport None=0 Foot=1 Horse=2 Wheelchair=3 Bicycle=4 Moped=5 Motprcycle=6 Motorcar=7 Goods=8 HGV=9 PSV=10 Count=11
+
+struct Node 
+    firstseg::index_t
+    latoffset::ll_off_t
+    lonoffset::ll_off_t
+    allow::transports_t
+    flags::nodeflags_t
+end
+
+struct NodesFile
+    number::index_t
+    snumber::index_t
+    latbins::ll_bin_t
+    lonbins::ll_bin_t
+    latzero::ll_bin_t
+    lonzero::ll_bin_t
+end
+
+struct Nodes
+    file::NodesFile
+    data::Ptr{Cuchar}
+    offsets::Ptr{index_t}
+    node::Ptr{Node}
+end
+
+struct SegmentsFile
+    number::index_t
+    snumber::index_t
+    nnumber::index_t
+end
+
+struct Segment 
+    node1::index_t
+    node2::index_t
+    next2::index_t
+    way::index_t
+    distance::distance_t
+end
+
+struct Segments
+    file::SegmentsFile
+    data::Ptr{Cuchar}
+    segments::Ptr{Segment}
+end
+
+struct Way 
+    name::index_t
+    allow::transports_t
+    type::highways_t
+    props::properties_t
+    speed::speed_t
+    weight::weight_t
+    height::height_t
+    width::width_t
+    length::length_t
+end 
+
+struct WaysFile
+    number::index_t
+    highways::highways_t
+    transports::transports_t
+    properties::properties_t
+end
+
+struct Ways
+    file::WaysFile 
+    data::Ptr{Cuchar}
+    ways::Ptr{Way}
+    names::Ptr{Cuchar}
+end
+
+struct RelationsFile 
+    trnumber::index_t
+end
+
+struct TurnRelation 
+    from::index_t
+    via::index_t
+    to::index_t
+    except::transports_t
+end
+
+struct Relations
+    file::RelationsFile
+    data::Ptr{Cuchar}
+    turnrelations::TurnRelation
+    via_start::index_t
+    via_end::index_t
+end
+
+struct Database
+    nodes::Nodes
+    segments::Segments
+    ways::Ways
+    relations::Ptr{Cvoid}
+end
+
+struct Profile 
+    name::Ptr{Cuchar}
+    transport::Transport
+    highway::Ptr{score_t} # 14 off
+    speed::Ptr{speed_t} # 14 off
+    props::Ptr{score_t} # # 14 off
+    oneway::Cint
+    turns::Cint 
+    weight::weight_t
+    height::height_t
+    width::width_t
+    length::length_t
+end
+
 check_api_version(ver=ROUTINO_API_VER) = (@ccall LIB.Routino_Check_API_Version(ver::Cint)::Cint) == 0
 open_database(path=DATADIR, prefix="GB") = @ccall LIB.Routino_LoadDatabase(path::Cstring, prefix::Cstring)::DB
 load_xml_profiles(filename=PROFILES) = (@ccall LIB.Routino_ParseXMLProfiles(filename::Cstring)::Cint) == 0
@@ -145,9 +272,9 @@ Get the profile names currently loaded (via the xml)
 """
 get_profile_names() = vec_string_from_ptr(@ccall LIB.Routino_GetProfileNames()::ListString)
 get_profile(name::AbstractString) = @ccall LIB.Routino_GetProfile(name::Cstring)::Profile
-validate_profile(db, profile) = (@ccall LIB.Routino_ValidateProfile(db::DB, profile::Profile)::Cint) == 0
-get_translation(name="en") = @ccall LIB.Routino_GetTranslation(name::Cstring)::Translation
-find_waypoint(lo, la, db, profile) = @ccall LIB.Routino_FindWaypoint(db::DB, profile::Profile, la::Cdouble, lo::Cdouble)::Waypoint
+validate_profile(db, profile) = (@ccall LIB.Routino_ValidateProfile(db::DB, profile::PtrProfile)::Cint) == 0
+get_translation(name="en") = @ccall LIB.Routino_GetTranslation(name::Cstring)::PtrTranslation
+find_waypoint(lo, la, db, profile) = @ccall LIB.Routino_FindWaypoint(db::DB, profile::PtrProfile, la::Cdouble, lo::Cdouble)::PtrWaypoint
 """
     find_waypoint(wp, router=Router())
     find_waypoint(lo, la, router=Router())
@@ -160,7 +287,7 @@ find_waypoint(wp::LoLa, router::Router=Router()) = find_waypoint(wp.lo, wp.la, r
 find_waypoint(lo::Float64, la::Float64, router::Router=Router()) = find_waypoint(lo, la, router.db, router.profile)
 
 #calculate_route(waypoints::Vector{Waypoint}, options; router=Router()) = calculate_route(waypoints, router.db, router.profile, router.translation, options)
-calculate_route(waypoints::Vector{Ptr{Cvoid}}, db, profile, translation, options) = @ccall LIB.Routino_CalculateRoute(db::DB, profile::Profile, translation::Translation, waypoints::Waypoint, length(waypoints)::Cint, options::Cint, C_NULL::Ptr{Cvoid})::Ptr{COutput}
+calculate_route(waypoints::Vector{Ptr{Cvoid}}, db, profile, translation, options) = @ccall LIB.Routino_CalculateRoute(db::DB, profile::PtrProfile, translation::PtrTranslation, waypoints::PtrWaypoint, length(waypoints)::Cint, options::Cint, C_NULL::Ptr{Cvoid})::Ptr{COutput}
 
 function calculate_route(router, options)
     if length(router.waypoints) > 1
@@ -203,6 +330,10 @@ function walk_to_distance(ptr::Ptr{COutput})
         return (km=round(Int, out.dist), mins=round(Int, out.time))
     end
     walk_to_distance(out.next)
+end
+
+function ldb()
+    db = @ccall LIB.Routino_LoadDatabase(DATADIR::Cstring, "GB"::Cstring)::Routino.Database
 end
 
 ###
