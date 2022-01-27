@@ -202,15 +202,16 @@ function walk_to_distance(ptr::Ptr{COutput})
         return
     end
     out = unsafe_load(ptr, 1)
-    if out.next == C_NULL
-        return (km=round(Int, out.dist), mins=round(Int, out.time))
-    end
+    km, mins =  round(Int, out.dist), round(Int, out.time)
     next = out.next
     free_ptr(out.name)
     free_ptr(out.desc1)
     free_ptr(out.desc2)
     free_ptr(out.desc3)
     free_ptr(out)
+    if next == C_NULL
+        return (;km, mins)
+    end
     walk_to_distance(next)
 end
 
