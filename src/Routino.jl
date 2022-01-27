@@ -63,7 +63,10 @@ end
     clear_waypoints(r::Router)
 Clear the waypoints in the active router, to reuse it for multiple route calculations
 """
-clear_waypoints(r::Router) = empty!(r.waypoints)
+function clear_waypoints(r::Router)
+    map(free_ptr, r.waypoints)
+    empty!(r.waypoints)
+end
 
 #==
  routino-router  --quickest --output-text --output-stdout --dir=/trip/osm --prefix=GB --lon1=-1.7587022270945216 --lat1=53.67050050773988 --lon2=-1.6091688317085435 --lat2=53.74083763716689 --profiles=/usr/share/routino/profiles.xml --translations=/usr/share/routino/translations.xml 
@@ -202,7 +205,13 @@ function walk_to_distance(ptr::Ptr{COutput})
     if out.next == C_NULL
         return (km=round(Int, out.dist), mins=round(Int, out.time))
     end
-    walk_to_distance(out.next)
+    next = out.next
+    free_ptr(out.name)
+    free_ptr(out.desc1)
+    free_ptr(out.desc2)
+    free_ptr(out.desc3)
+    free_ptr(out)
+    walk_to_distance(next)
 end
 
 ###
