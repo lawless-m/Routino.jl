@@ -150,7 +150,7 @@ const ll_bin_t = Cshort
 const ll_off_t = Cshort
 const nodeflags_t = Cushort
 
-@enum Transport None=0 Foot=1 Horse=2 Wheelchair=3 Bicycle=4 Moped=5 Motprcycle=6 Motorcar=7 Goods=8 HGV=9 PSV=10 Count=11
+@enum Transport None=0 Foot=1 Horse=2 Wheelchair=3 Bicycle=4 Moped=5 Motorcycle=6 Motorcar=7 Goods=8 HGV=9 PSV=10 Count=11
 
 struct Node 
     firstseg::index_t
@@ -262,6 +262,25 @@ struct Profile
     length::length_t
 end
 
+function name(obj) 
+    if hasproperty(obj, :name)
+        if obj.name != C_NULL
+            string_from_ptr(obj.name; free=false)
+        else
+            ""
+        end
+    end
+end
+
+function scores(obj, prop, n)
+    if !hasproperty(obj, prop)
+        return
+    end
+    vec_from_ptr(ptr, type, n)
+end
+
+    
+
 check_api_version(ver=ROUTINO_API_VER) = (@ccall LIB.Routino_Check_API_Version(ver::Cint)::Cint) == 0
 open_database(path=DATADIR, prefix="GB") = @ccall LIB.Routino_LoadDatabase(path::Cstring, prefix::Cstring)::DB
 load_xml_profiles(filename=PROFILES) = (@ccall LIB.Routino_ParseXMLProfiles(filename::Cstring)::Cint) == 0
@@ -271,7 +290,13 @@ load_xml_translations(filename=TRANSLATIONS) = (@ccall LIB.Routino_ParseXMLTrans
 Get the profile names currently loaded (via the xml)
 """
 get_profile_names() = vec_string_from_ptr(@ccall LIB.Routino_GetProfileNames()::ListString)
-get_profile(name::AbstractString) = @ccall LIB.Routino_GetProfile(name::Cstring)::Profile
+function get_profile(name::AbstractString)
+    ptr = @ccall LIB.Routino_GetProfile(name::Cstring)::Ptr{Profile}
+    if ptr != C_NULL
+        unsafe_load(ptr)
+    end 
+end 
+
 validate_profile(db, profile) = (@ccall LIB.Routino_ValidateProfile(db::DB, profile::PtrProfile)::Cint) == 0
 get_translation(name="en") = @ccall LIB.Routino_GetTranslation(name::Cstring)::PtrTranslation
 find_waypoint(lo, la, db, profile) = @ccall LIB.Routino_FindWaypoint(db::DB, profile::PtrProfile, la::Cdouble, lo::Cdouble)::PtrWaypoint
