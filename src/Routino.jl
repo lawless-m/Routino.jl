@@ -64,7 +64,7 @@ end
 Clear the waypoints in the active router, to reuse it for multiple route calculations
 """
 function clear_waypoints(r::Router)
-    map(free_ptr, r.waypoints)
+    foreach(free_ptr, r.waypoints)
     empty!(r.waypoints)
 end
 
@@ -94,7 +94,9 @@ Calculate the route and return the `(km=0, mins=0)` or `default` using either th
 function distance(wayp1::LoLa, wayp2::LoLa, router::Router=Router(), default=nothing; options=1024) # quickest
     clear_waypoints(router)
     if add_waypoint!(wayp1, router) && add_waypoint!(wayp2, router)
-        km_mins = walk_to_distance(calculate_route(router, options))
+        route = calculate_route(router, options)
+        km_mins = walk_to_distance(route)
+        delete_route(route)
         return km_mins === nothing ? default : km_mins
     end
     default
@@ -197,22 +199,17 @@ function add_waypoint!(lo::Float64, la::Float64, router::Router)
     false
 end
 
+delete_route(ptr::Ptr{COutput}) = @ccall LIB.Routino_DeleteRoute(ptr::Ptr{COutput})::Cvoid
+
 function walk_to_distance(ptr::Ptr{COutput})
     if ptr == C_NULL
         return
     end
     out = unsafe_load(ptr, 1)
-    km, mins =  round(Int, out.dist), round(Int, out.time)
-    next = out.next
-    free_ptr(out.name)
-    free_ptr(out.desc1)
-    free_ptr(out.desc2)
-    free_ptr(out.desc3)
-    free_ptr(ptr)
-    if next == C_NULL
-        return (;km, mins)
+    if out.next != C_NULL
+        walk_to_distance(out.next)    
     end
-    walk_to_distance(next)
+    (km=round(Int, out.dist), mins=round(Int, out.time))
 end
 
 ###
