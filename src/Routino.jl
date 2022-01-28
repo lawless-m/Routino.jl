@@ -208,7 +208,7 @@ function walk_to_distance(ptr::Ptr{COutput})
     free_ptr(out.desc1)
     free_ptr(out.desc2)
     free_ptr(out.desc3)
-    free_ptr(out)
+    free_ptr(ptr)
     if next == C_NULL
         return (;km, mins)
     end
