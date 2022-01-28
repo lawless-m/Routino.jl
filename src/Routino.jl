@@ -164,7 +164,6 @@ Test if a waypoint is in the database.
 find_waypoint(wp::LoLa, router::Router=Router()) = find_waypoint(wp.lo, wp.la, router)
 find_waypoint(lo::Float64, la::Float64, router::Router=Router()) = find_waypoint(lo, la, router.db, router.profile)
 
-#calculate_route(waypoints::Vector{Waypoint}, options; router=Router()) = calculate_route(waypoints, router.db, router.profile, router.translation, options)
 calculate_route(waypoints::Vector{Ptr{Cvoid}}, db, profile, translation, options) = @ccall LIB.Routino_CalculateRoute(db::DB, profile::Profile, translation::Translation, waypoints::Waypoint, length(waypoints)::Cint, options::Cint, C_NULL::Ptr{Cvoid})::Ptr{COutput}
 
 function calculate_route(router, options)
