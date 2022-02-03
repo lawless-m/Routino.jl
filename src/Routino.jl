@@ -2,7 +2,7 @@ module Routino
 
 using CCallHelp
 
-export route, distance, Router, find_waypoint, clear_waypoints, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router, free_xml, walk_to_distance
+export route, distance, Router, find_waypoint, clear_waypoints!, add_waypoint!, quickest_route, shortest_route, get_profile_names, close_router, free_xml, walk_to_distance
 
 const BINARY = "/usr/bin/routino-router"
 const DATADIR = "/trip/osm"
@@ -60,10 +60,10 @@ function free_xml()
 end
 
 """
-    clear_waypoints(r::Router)
+    clear_waypoints!(r::Router)
 Clear the waypoints in the active router, to reuse it for multiple route calculations
 """
-function clear_waypoints(r::Router)
+function clear_waypoints!(r::Router)
     foreach(free_ptr, r.waypoints)
     empty!(r.waypoints)
 end
@@ -92,7 +92,7 @@ end
 Calculate the route and return the `(km=0, mins=0)` or `default` using either the `Router` or the binary via the shell
 """
 function distance(wayp1::LoLa, wayp2::LoLa, router::Router=Router(), default=nothing; options=1024) # quickest
-    clear_waypoints(router)
+    clear_waypoints!(router)
     if add_waypoint!(wayp1, router) && add_waypoint!(wayp2, router)
         route = calculate_route(router, options)
         km_mins = walk_to_distance(route)
@@ -114,12 +114,17 @@ function distance(wayp1::LoLa, wayp2::LoLa, binary::AbstractString, datadir=DATA
     end
 end
 #==
-wayp1 = (lo=-1.7587022270945216, la=53.67050050773988) # HD2
-wayp2 = (lo=-1.6091688317085435, la=53.74083763716689) # pcode_centre(idx, "LS27 0AL")
+wayp1 = 
 route(wayp1, wayp2)
 
-wayp1 = (lo=-4.737703404818423, la=58.50695215591557)
-wayp2 = (lo=-2.954101, la=53.479544)
+wayp1, wayp2 =  (lo=-1.7587022270945216, la=53.67050050773988),  (lo=-1.6091688317085435, la=53.74083763716689) # # "HD2 1JT", "LS27 0AL"
+
+wayp1, wayp2 = (lo=-4.737703404818423, la=58.50695215591557), (lo=-2.954101, la=53.479544)
+rs = [Router() for _ in 1:5]
+Threads.@threads for i in 1:length(rs)
+    println(distance(wayp1, wayp2, rs[i]))
+end
+        
 ==#
 
 
@@ -208,10 +213,15 @@ function walk_to_distance(ptr::Ptr{COutput})
     if out.next != C_NULL
         return walk_to_distance(out.next)    
     end
-    
-
     (;km=round(Int, out.dist), mins=round(Int, out.time))
 end
 
+#==
+    ct9 = (lo=1.3543992881446998, la=51.37956887853703)
+    maid = (lo=0.469877, la=51.294277) # 254 # (km = 76, mins = 1137)
+    broad = (lo=1.395803, la=51.362011) # 56 # (km = 4, mins = 61)
+    rf = Router("foot")
+    add_waypoint!(ct9, rf)
+=##
 ###
 end
